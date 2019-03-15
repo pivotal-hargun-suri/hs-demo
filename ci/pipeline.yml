@@ -7,6 +7,15 @@ resources:
     branch: master
     private_key: ((github_key))
 
+- name: cf-deploy
+  type: cf
+  source:
+    api: https://api.run.pivotal.io
+    username: ((cf-username))
+    password: ((cf-password))
+    organization: ((cf-organization))
+    space: ((cf-space))
+    skip_cert_check: false
 
 jobs:
 - name: test
@@ -15,4 +24,16 @@ jobs:
       trigger: true
     - task: test
       file: source-code/ci/task/something-test.yml
+
+- name: deploy
+  plan:
+    - get: source-code
+      passed: [test]
+      trigger: true
+    - task: build
+      file: source-code/ci/task/something-build.yml
+    - put: cf-deploy
+      params:
+        path: build-output/*.jar
+        manifest: source-code/cd/manifest.yml
 
